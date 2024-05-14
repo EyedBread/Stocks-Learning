@@ -33,7 +33,6 @@ def load_data(file_path):
     # Load the data
     dataframe = pd.read_csv(file_path)
 
-    print(dataframe.head())
     return dataframe
 
 
