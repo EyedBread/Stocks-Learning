@@ -11,7 +11,7 @@ def contains_keywords(headline, keywords):
     # Check if any pattern matches the headline
     return any(pattern.search(headline) for pattern in patterns)
 
-start_date = '2019-07-23'
+start_date = '2017-12-22'
 end_date = '2020-01-01'
 
 analyzer = SentimentIntensityAnalyzer()
@@ -166,4 +166,4 @@ merged_df = merged_df.sort_values('date')
 
 merged_df.fillna(0, inplace=True)
 
-merged_df.to_csv('/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/News/news_sentiments.csv', index=False)
+merged_df.to_csv('/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/News/news_sentiments_2017-2020.csv', index=False)

@@ -28,21 +28,22 @@ for sentence in sentences:
     print("{:-<65} {}".format(sentence, str(vs)))
 '''
 
-start_date = '2019-07-23'
+start_date = '2017-12-22'
 end_date = '2020-01-01'
 start_date_dt = pd.to_datetime(start_date).date()
 end_date_dt = pd.to_datetime(end_date).date()
 
-file_path_news = "/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/News/news_sentiments.csv"
+file_path_news = "/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/News/news_sentiments_2017-2020.csv"
 file_path_stocktwits = "/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/Stocktwits/stocktwits_sentiment.csv"
-file_path_twitter = "/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/Tweets/twitter_sentiment.csv"
+file_path_twitter = "/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/Tweets/twitter_sentiment_2017-2020.csv"
 
 data_news = pd.read_csv(file_path_news)
 data_stocktwits = pd.read_csv(file_path_stocktwits)
 data_twitter = pd.read_csv(file_path_twitter)
 
-merged_df = pd.merge(data_news, data_stocktwits, on='date', how='outer')
-merged_df = pd.merge(merged_df, data_twitter, on='date', how='outer')
+merged_df = pd.merge(data_news, data_twitter, on='date', how='outer')
+#merged_df = pd.merge(data_news, data_stocktwits, on='date', how='outer')
+# merged_df = pd.merge(merged_df, data_twitter, on='date', how='outer')
 
 merged_df['date'] = pd.to_datetime(merged_df['date'])
 merged_df['date'] = merged_df['date'].dt.date
@@ -72,4 +73,4 @@ merged_df['date'] = merged_df['date'].astype(str)
 merged_df['date'] = merged_df['date'].str.replace('-', '/')
 #merged_df['date'] = merged_df['date'].dt.strftime('%Y/%m/%d')
 
-merged_df.to_csv('/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/amzn_source_price.csv', index=False)
+merged_df.to_csv('/Users/marku/Documents/Plugg/DD2424 - Deep Learning/Stocks-Learning/data/original_dataset/amzn_source_price_2017-2020.csv', index=False)
