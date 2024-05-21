@@ -121,7 +121,7 @@ def meta_model(num_models):
         Meta portion of the model that takes as input predictions from the base
         models.
     '''
-    inputs = Input(shape=num_models)
+    inputs = Input(shape=(num_models,))
 
     X = Dense(units=30, activation='relu')(inputs)
     X = Dense(units=25, activation='relu')(X)
@@ -168,7 +168,7 @@ def train_meta_model(data_path, data_params, model_paths, save_path):
                   optimizer=Adam(),
                   metrics=['accuracy'])
     model.fit(validate_X, validate_y, batch_size=8, epochs=100)
-    model.save(save_path)
+    model.save(save_path + ".keras")
 
 
 def predict_meta_model(meta_load, data_path, data_params, model_paths):
@@ -193,6 +193,14 @@ def predict_meta_model(meta_load, data_path, data_params, model_paths):
                                         model_paths, test=True)
     model = load_model(meta_load)
     model.evaluate(test_X, test_y)
+    # print the accuracy, precision, recall, and F1 score
+    print(test_X)
+    print()
+    output = model.predict(test_X)
+    print(output)
+
+
+
 
 
 # ====================
@@ -204,11 +212,11 @@ if __name__ == '__main__':
     # --------------------
     # Variable initialization
     # --------------------
-    DATA_PATH = join('..', 'data', 'combined', 'cleaned_data.csv')
+    DATA_PATH = join('..', 'data', 'combined', 'amzn_source_price_2017-2020.csv')
     DATA_PARAMS = (10, 1, 40)  # (horizon, days_forward, end_split)
-    MODEL_PATHS = {'lstm': join('..', 'models', 'lstm_one_day'),
-                   'gru': join('..', 'models', 'gru_one_day')}
-    SAVE_PATH = join('..', 'models', 'meta_one_day')
+    MODEL_PATHS = {'lstm': join('..', 'models', 'lstm_one_day.keras'),
+                   'gru': join('..', 'models', 'gru_one_day.keras')}
+    SAVE_PATH = join('..', 'models', 'meta_one_day.keras')
 
     # --------------------
     # Train BE & Predict

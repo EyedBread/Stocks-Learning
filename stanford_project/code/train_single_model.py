@@ -143,12 +143,12 @@ def train_single_model(data_path, data_params, epochs, lstm=True, save_path=None
 
     # Compile and fit
     model.compile(loss='binary_crossentropy',
-                  optimizer=RMSprop(lr=0.0008),
+                  optimizer=RMSprop(learning_rate=0.0008),
                   metrics=['accuracy'])
 
     model.fit(X_train, y_train, batch_size=16, epochs=epochs, shuffle=True,
               validation_data=(X_validate, y_validate))
-    model.save(save_path)
+    model.save(save_path + ".keras")
 
 
 # ====================
@@ -160,14 +160,14 @@ if __name__ == '__main__':
     # --------------------
     # Variable Initializer
     # --------------------
-    DATA_PATH = join('..', 'data', 'combined', 'cleaned_data.csv')
-    GRU_SAVE = join('..', 'models', 'gru_five_days')
-    LSTM_SAVE = join('..', 'models', 'lstm_three_days')
+    DATA_PATH = join('..', 'data', 'combined', 'amzn_source_price_2017-2020.csv')
+    GRU_SAVE = join('..', 'models', 'gru_one_day')
+    LSTM_SAVE = join('..', 'models', 'lstm_one_day')
 
     HORIZON = 10
-    DAYS_FORWARD = 3
+    DAYS_FORWARD = 1
     END_SPLIT = 40
-    EPOCHS = 200 
+    EPOCHS = 100 
 
     DATA_PARAMS = (HORIZON, DAYS_FORWARD, END_SPLIT)
 
