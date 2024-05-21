@@ -45,19 +45,21 @@ def load_raw_data(data_path):
         3: High
         4: Low
         5: VADER Score.
+        ...
+        Last column: relevance score
     '''
     raw_data = np.genfromtxt(data_path, delimiter=',', skip_header=1)
-    raw_data = raw_data[:, 1:].astype('float32')
+    raw_data = raw_data[:, 1:].astype('float32') #Drop the date column
 
     return raw_data
 
 
-def normalize_data(raw_data):
+def normalize_data(raw_data, use_relevance_scores=False):
     '''
     Function
     --------
     normalize_data():
-        Normalizes each feature of the data between 0 and 1.
+        Normalizes each feature of the data between 0 and 1, except for relevance score.
 
     Parameters
     ----------
@@ -70,16 +72,31 @@ def normalize_data(raw_data):
         3: High
         4: Low
         5: VADER Score.
+        ...
+        Last column: relevance score
+    use_relevance_scores: bool
+        Whether the data contains relevance scores column, we don't normalize it.
 
     Returns
     -------
     raw_data: ndarray
         Same as parameter, but with each feature normalized between 0 & 1.
     '''
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    raw_data = scaler.fit_transform(raw_data)
 
-    return raw_data
+    data_to_normalize = raw_data
+    relevance_scores = None
+    if use_relevance_scores:
+        data_to_normalize = raw_data[:, :-1]  # All rows, all but the last column
+        relevance_scores = raw_data[:, -1:] 
+
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    normalized_data = scaler.fit_transform(data_to_normalize)
+
+    # Concatenate the normalized data with the relevance score column
+    if use_relevance_scores:
+        normalized_data = np.concatenate((normalized_data, relevance_scores), axis=1)
+
+    return normalized_data
 
 
 def get_sample_size(raw_sample_size, horizon, days_forward):
@@ -233,12 +250,67 @@ def split_datasets(movements_y, sequence_X, end_split):
     return split_y, split_X
 
 
+def get_dynamic_sequence_X(raw_data, relevance_scores, sample_size, min_horizon, max_horizon, feature_size, movements_y):
+    '''
+    Function
+    --------
+    get_dynamic_sequence_X():
+        Get the time sequences for each sample from the normalized data with dynamic lengths
+        based on relevance scores.
+
+    Parameters
+    ----------
+    raw_data: ndarray
+        2D array of the data with each row being a date and the columns being features.
+    relevance_scores: ndarray
+        1D array with relevance scores influencing additional days to the horizon.
+    sample_size: int
+        Number of samples of sequences considering the other parameters.
+    horizon: int
+        Number of previous days used to predict per time-step.
+    feature_size: int
+        Number of independent parameters at each time-step.
+
+    Returns
+    -------
+    sequence_X: ndarray
+        Input information for the deep learning model, with dynamic sequence lengths.
+        3D array of dimensions (samples, dynamic time-steps, features).
+    '''
+    # Prepare a list to hold sequences since they will have varying lengths
+    sequence_list = []
+    shift_factor = len(raw_data) - len(movements_y) #Shifting factor
+    if shift_factor < 1:
+        raise ValueError('The number of relevance scores exceeds the number of data points.')
+    if (len(raw_data) - len(relevance_scores) != 0):
+        raise ValueError('The number of relevance scores does not match the number of data points.')
+    print("shift_factor", shift_factor)
+    print("min_horizon", min_horizon)
+    print("max_horizon", max_horizon)
+
+    for i in range(movements_y.shape[0]):
+        predicted_value = movements_y[i]
+        sequence = []
+        for j in range(max(0, i - int(max_horizon) - 1), i + int(shift_factor)):
+            element = raw_data[j]
+            relevance_score = relevance_scores[j]
+            if relevance_score + j >= shift_factor + i:
+                sequence.append(element)
+        
+        while len(sequence) < max_horizon:
+            # append -1 to indicate padding
+            sequence.append([-1] * feature_size)
+        sequence_list.append(sequence)
+
+    return np.array(sequence_list, dtype='float32')
+
 # ====================
 # Main Def
 # ====================
 
 
-def data_prep(data_path, horizon, days_forward, end_split):
+
+def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=False):
     '''
     Function
     --------
@@ -250,7 +322,7 @@ def data_prep(data_path, horizon, days_forward, end_split):
     Parameters
     ----------
     data_path: str
-        Path to the cleaned, combined data set.
+        Path to the cleaned, combined data set. NOTE: The last column should be relevance scores.
     horizon: int
         Number of previous days used to predict per time-step.
     days_forward: int
@@ -259,6 +331,8 @@ def data_prep(data_path, horizon, days_forward, end_split):
         Number of days to have in the valiation and test sets, e.g., if 40,
         then there are 40 samples in the validation and 40 samples in the test
         sets.
+    use_relevance_scores: bool
+        Whether to use relevance scores to adjust the horizon.
 
     Returns
     -------
@@ -268,16 +342,58 @@ def data_prep(data_path, horizon, days_forward, end_split):
         (train_X, validate_X, test_X)
     '''
     # Get raw data for 2D structure and get dimensions.
-    raw_data = normalize_data(load_raw_data(data_path))
+    raw_data = normalize_data(load_raw_data(data_path), use_relevance_scores)
+    if raw_data is None:
+        raise ValueError('Data could not be loaded from the path.')
+    print(raw_data)
+    relevance_scores = None
+    if use_relevance_scores:
+        relevance_scores = raw_data[:, -1] # Last column should be relevance scores
     raw_sample_size, feature_size = raw_data.shape
+    print("raw_sample_size", raw_sample_size)
+    print("feature_size", feature_size)
 
     # Get corrected sample size and the closing prices.
     sample_size = get_sample_size(raw_sample_size, horizon, days_forward)
+    print(sample_size)
     closing_prices = raw_data[:, 0]
 
     # Create the sequences of X and the stock closing day movements.
-    movements_y = get_movements_y(horizon, days_forward, closing_prices)
-    sequence_X = get_sequence_X(raw_data, sample_size, horizon, feature_size)
+    movements_y = None
+
+    
+    sequence_X = None
+    if use_relevance_scores:
+        min_horizon = 2
+        # Get the max relevance score to adjust the sample size.
+        max_relevance_score = np.max(relevance_scores)
+        sample_size = get_sample_size(raw_sample_size, min_horizon, days_forward)
+        movements_y = get_movements_y(min_horizon, days_forward, closing_prices)
+        sequence_X = get_dynamic_sequence_X(raw_data[:, :-1], relevance_scores, sample_size, min_horizon, min_horizon + max_relevance_score, feature_size - 1, movements_y)
+
+        # TODO : THIS IS FOR DEBUGGING, REMOVE LATER WHEN 100% SURE IT WORKS
+        # print("y movement", movements_y.shape)
+
+        # print(sequence_X.shape)
+        # print(sequence_X[0])
+        # print(movements_y[0])
+        # print(sequence_X[1])
+        # print(movements_y[1])
+        # print(sequence_X[2])
+        # print(movements_y[2])
+        # print(sequence_X[3])
+        # print(movements_y[3])
+        # print(sequence_X[4])
+        # print(movements_y[4])
+        # print(sequence_X[5])
+        # print(movements_y[5])
+        # print(sequence_X[6])
+        # print(movements_y[6])
+        # print(sequence_X[-1])
+        # print(movements_y[-1])
+    else:
+        movements_y = get_movements_y(horizon, days_forward, closing_prices)
+        sequence_X = get_sequence_X(raw_data, sample_size, horizon, feature_size)
 
     # Split data sets into train, validate, and test.
     split_y, split_X = split_datasets(movements_y, sequence_X, end_split)
@@ -294,13 +410,14 @@ if __name__ == '__main__':
     # --------------------
     # Variable Initialize
     # --------------------
-    DATA_PATH = join('..', 'data', 'combined', 'cleaned_data.csv')
+    # Test dataset for variable length sequences
+    DATA_PATH = join('.', 'stanford_project', 'data', 'combined', 'cnbc_sentiments.csv')
 
-    HORIZON = 10
+    HORIZON = 0
     DAYS_FORWARD = 1
-    END_SPLIT = 40
+    END_SPLIT = 10
 
     # --------------------
     # Main functionality
     # --------------------
-    split_y, split_X = data_prep(DATA_PATH, HORIZON, DAYS_FORWARD, END_SPLIT)
+    split_y, split_X = data_prep(DATA_PATH, HORIZON, DAYS_FORWARD, END_SPLIT, True)
