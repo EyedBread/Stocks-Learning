@@ -15,6 +15,7 @@ Description: Turns cleaned data into proper sequences, normalizes, and splits
 from os.path import join
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
 
 
 # ====================
@@ -84,17 +85,12 @@ def normalize_data(raw_data, use_relevance_scores=False):
     '''
 
     data_to_normalize = raw_data
-    relevance_scores = None
-    if use_relevance_scores:
-        data_to_normalize = raw_data[:, :-1]  # All rows, all but the last column
-        relevance_scores = raw_data[:, -1:] 
+
 
     scaler = MinMaxScaler(feature_range=(0, 1))
     normalized_data = scaler.fit_transform(data_to_normalize)
 
-    # Concatenate the normalized data with the relevance score column
-    if use_relevance_scores:
-        normalized_data = np.concatenate((normalized_data, relevance_scores), axis=1)
+
 
     return normalized_data
 
@@ -250,7 +246,7 @@ def split_datasets(movements_y, sequence_X, end_split):
     return split_y, split_X
 
 
-def get_dynamic_sequence_X(raw_data, relevance_scores, sample_size, min_horizon, max_horizon, feature_size, movements_y):
+def get_dynamic_sequence_X(raw_data, relevance_scores, sample_size, max_horizon, feature_size, movements_y):
     '''
     Function
     --------
@@ -285,7 +281,6 @@ def get_dynamic_sequence_X(raw_data, relevance_scores, sample_size, min_horizon,
     if (len(raw_data) - len(relevance_scores) != 0):
         raise ValueError('The number of relevance scores does not match the number of data points.')
     print("shift_factor", shift_factor)
-    print("min_horizon", min_horizon)
     print("max_horizon", max_horizon)
 
     for i in range(movements_y.shape[0]):
@@ -303,6 +298,9 @@ def get_dynamic_sequence_X(raw_data, relevance_scores, sample_size, min_horizon,
         sequence_list.append(sequence)
 
     return np.array(sequence_list, dtype='float32')
+
+def drop_column(arr, idx):
+    return np.delete(arr, idx, axis=1)
 
 # ====================
 # Main Def
@@ -341,35 +339,48 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
     split_X: tuple
         (train_X, validate_X, test_X)
     '''
-    # Get raw data for 2D structure and get dimensions.
-    raw_data = normalize_data(load_raw_data(data_path), use_relevance_scores)
-    if raw_data is None:
-        raise ValueError('Data could not be loaded from the path.')
-    print(raw_data)
+    # Load data into a pandas DataFrame
+    raw_data = pd.read_csv(data_path)
+
+    # Drop irrelevant columns based on their headers
+    columns_to_drop = ['date', 'Close']  # Add headers of columns to drop here , 'Volume','Open','High','Low'
+    # columns_to_drop = ['Date'] #For the tesla dataset
+    raw_data = raw_data.drop(columns=columns_to_drop)
+
     relevance_scores = None
+    relevance_column = 'mean TH'  
     if use_relevance_scores:
-        relevance_scores = raw_data[:, -1] # Last column should be relevance scores
+        
+        relevance_scores = raw_data[relevance_column].values
+        relevance_scores = np.round(relevance_scores)
+    # if column exists
+    if relevance_column in raw_data.columns:
+        raw_data = raw_data.drop(columns=[relevance_column])
+    closing_prices = raw_data['Adj Close'].astype('float32').values #['Adj Close']
+    raw_data = raw_data.astype('float32').values  # Convert DataFrame to numpy array
+
+
+    raw_data = normalize_data(raw_data, use_relevance_scores)
     raw_sample_size, feature_size = raw_data.shape
-    print("raw_sample_size", raw_sample_size)
-    print("feature_size", feature_size)
 
     # Get corrected sample size and the closing prices.
     sample_size = get_sample_size(raw_sample_size, horizon, days_forward)
     print(sample_size)
-    closing_prices = raw_data[:, 0]
+    
 
     # Create the sequences of X and the stock closing day movements.
     movements_y = None
-
-    
     sequence_X = None
     if use_relevance_scores:
-        min_horizon = 2
+        min_horizon = horizon
+        # add horizon to all relevance scores
+        relevance_scores = relevance_scores + min_horizon
         # Get the max relevance score to adjust the sample size.
         max_relevance_score = np.max(relevance_scores)
+        print("max_relevance_score", max_relevance_score)
         sample_size = get_sample_size(raw_sample_size, min_horizon, days_forward)
         movements_y = get_movements_y(min_horizon, days_forward, closing_prices)
-        sequence_X = get_dynamic_sequence_X(raw_data[:, :-1], relevance_scores, sample_size, min_horizon, min_horizon + max_relevance_score, feature_size - 1, movements_y)
+        sequence_X = get_dynamic_sequence_X(raw_data[:, :], relevance_scores, sample_size, max_relevance_score, feature_size, movements_y)
 
         # TODO : THIS IS FOR DEBUGGING, REMOVE LATER WHEN 100% SURE IT WORKS
         # print("y movement", movements_y.shape)
@@ -394,7 +405,10 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
     else:
         movements_y = get_movements_y(horizon, days_forward, closing_prices)
         sequence_X = get_sequence_X(raw_data, sample_size, horizon, feature_size)
-
+    # print("sequence_X", sequence_X.shape)
+    # print("movements_y", movements_y.shape)
+    # # round when printin
+    # print(np.round(sequence_X[0],2))
     # Split data sets into train, validate, and test.
     split_y, split_X = split_datasets(movements_y, sequence_X, end_split)
 
@@ -411,9 +425,9 @@ if __name__ == '__main__':
     # Variable Initialize
     # --------------------
     # Test dataset for variable length sequences
-    DATA_PATH = join('.', 'stanford_project', 'data', 'combined', 'cnbc_sentiments.csv')
+    DATA_PATH = join('.', 'stanford_project', 'data', 'combined', 'amzn_all_sources_WITH_TH_2017-2020.csv')
 
-    HORIZON = 0
+    HORIZON = 10
     DAYS_FORWARD = 1
     END_SPLIT = 10
 
