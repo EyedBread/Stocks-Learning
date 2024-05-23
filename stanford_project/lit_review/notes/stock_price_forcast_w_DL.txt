@@ -1,0 +1,83 @@
+====================
+Title: Stock Price Forecast with Deep Learning
+Date: March, 2021
+====================
+
+====================
+Abstract
+====================
+- Compare various approaches to stock price prediction
+- Performance of:
+      + fully-connected
+      + convolutional
+      + recurrent
+- Prediction is the NEXT DAY value of S&P 500 index
+- Based on previous values
+- Three optimization techniques considered:
+      + Stochastic Gradient Descent
+      + Root Mean Square Propagation
+      + Adaptive Moment Estimation
+- Result: Single layer recurrent neural net with RMSprop is optimal
+
+====================
+Introduction
+====================
+- According to the "Efficient Market Hypothesis", all publicly
+  available information is already incorporated in the stock price.
+      + Should be infeasible to forecast future prices 
+- However, existing financial markets are not perfectly eff. 
+- INPUTS: Index values from the previous 14 days
+- OUTPUT: Next-day value of the index
+ 
+====================
+Literature
+====================
+- Traditional approaches use the following indicators:
+      + volatility
+      + momentum
+      + relative strength index
+- POSSIBLE METRIC: coefficient of determination
+- Volume is an important metric in forecasting
+- LSTM models are significantly more potent in predicting
+  significant changes in stock price
+- Could have imbalanced (biased) results due to sampling in economic downturn
+      + Can be combated with resampling
+     
+====================
+Model Specifications
+====================
+- Each model consists of:
+      + a 14-dimensional input layer
+      + a 1-dimensional output layer
+      + Input is index value and volume from previous 14 trading days
+      + Output is predicted index value on following day
+- The number of days is a hyperparameter given by the user
+
+--------------------
+Model Training
+--------------------
+- Model is trained on daily index values from the past 30 years
+- Data split into train/validation/test according to 70/15/15
+- Batch size is chosen to be 32
+- Use early stopping to avoid overfitting
+- Validation error monitored during the training
+      + Process stopped when validation error stops decreasing over 10 epochs
+- Implemented using Keras API
+- Data is normalized between 0 to 1 using (X - min(X)) / (max(X) - min(X))
+      + This is done based on the training set
+      + Is this normalization done with end of day and volume combined?
+- SPLITS DATA based on time -- training is earlier, validation a little later,
+  test latest
+
+====================
+Results & Analysis
+====================
+- Fixed ReLu activation in all models
+- For initial training, uses Early Stopping callback
+      + Based on validation error
+      + Determines optimal # of epochs
+      + Re-run on optimal epochs for combined train/validation set
+- Finally, evaluate models on the test set
+- Performance is measured with mean averse error (MAE)
+- Oddly, a simple RNN beats out LSTM for this setup
+- WORTH CONSIDERING the above point

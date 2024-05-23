@@ -1,0 +1,144 @@
+====================
+Title: Applications of deep learning in stock market prediction: Recent progress
+Date: March 5, 2020
+====================
+
+====================
+Abstract
+====================
+- Gives latest review on recent works on deep learning for stock markets
+
+====================
+Introduction
+====================
+- In this work:
+     1. Summarize the latest progress of applying DL to stock market prediction
+     2. Give general workflow for stock market prediction
+     3. Pay attention to implementation and reciprocity 
+     4. Point out future directions
+     5. Open Github made to compile studies
+
+====================
+Overview
+====================
+- Papers can be classified into:
+      + Regression problems -> predicting stock price
+      + Classification problems -> whether stock goes up or down
+
+====================
+Prediction Workflow
+====================
+
+Looking at the following parts:
+    1. Raw Data
+    2. Data Processing
+    3. Prediction Model
+    4. Model Evaluation
+
+--------------------
+Raw Data
+--------------------
+- Raw data categories often used:
+      1. Market Data:
+           + All trading activities in stock market
+           + open, high, low, close prices, volume, etc
+           + Both input features and prediction target
+      2. Text Data:
+           + Text data contributed by individuals 
+                 # social media, news, web searches, etc
+           + Hard to collect and process (I know!!!!)
+           + Sentiment analysis can be applied on these text data to produce a
+             sentiment factor
+                 # positive, neutral, negative
+                 # Can be further used for analysis
+      3. Macroeconomics Data:
+           + Reflects economic circumstances of a particular country or region 
+      4. Knowledge Graph Data:
+           + Relation between companies and markets
+           + Graph neural networks
+      5. Image Data:
+           + Inspired by success of CNNs
+      6. Fundamental Data:
+           + Accounting data -> reported quarterly
+           + Low frequency reporting -> not great for deep learning
+      7. Analytics Data:
+           + Extracted from reports from investment banks and research firms
+           + Valuation information
+
+- Market and text data are, by far, the most used data points
+- Text is used second most
+      + social media and online news websites
+      + Easier use of web crawlers to get the text data
+- lag -> number of days used to predict the next stock price, e.g., 30 days of
+         data to predict price tomorrow
+- horizon -> time to predict the price, e.g. tomorrow, or a week from now
+- Most studies have short horizons
+
+--------------------
+Data Processing
+--------------------
+- To align multiple types of data, with different frequencies, data of lower
+  frequency should be inserted in a forward way by propagating the last valid
+  observation forward to the next valid, to avoid data leakage of the future info
+- Wavelet transform has been used to eliminate noise in SP time series
+- Can create features from raw data using domain data
+- Given the sequence of words, the word2vec model is used for text
+- One paper proposes a sentiment Stock2Vec embedding model trained on stock news
+  and Harvard IV-4 psychological dictionary
+- Dimensionality reduction used to prevent overfitting
+      +  Dimensionality reduction on input features has been adopted as a
+         preprocessing technique for stock market prediction
+      +  PCA is commonly used for this
+- Given different input features of varying scales
+      + normalization and standardization are used to guarantee that some ML
+        models can work and also to help improve training speed and performance
+      + Normalization rescales every feature of the input to lie between 0 and 1
+      + Feature Standardization means subtracting a measure of location and
+        dividing by a measure of scale
+            # E.g., subtract mean and divide by standard deviation
+      + Data split
+            # Either sample using cross-validation
+            # Or use rolling window, which is use later times for validation and
+              testing
+
+--------------------
+Prediction Model
+--------------------
+
+--------------------
+Model Evaluation
+--------------------
+- Four types:
+      1. Classification metrics:
+             + Measure performance on movement prediction
+             + accuracy, precision, recall, sensitivity
+      2. Regression metrics:
+             + MAE, RMAE, MSE, NMSE, RMSE, MAPE
+
+====================
+Implementation & Reproducibility
+====================
+
+--------------------
+Implementation
+--------------------
+- Deep learning models require a large amount of computation
+- GPU has been used to accelerate operations involved
+
+--------------------
+Data Availability
+--------------------
+- Good place to look for data: Yahoo! Finance
+- For financial news look at major news sources
+      + CNBC, Reuters, Wall Street Journal, Fortune, etc
+- Social networking websites
+      + Twitter and Sina Weibo
+      + Provide web application programming interface (API) for the access of
+        their data -> usually preprocessed and anonymous
+      + Could filter financial related tweets using companies' names as keywords
+
+====================
+Future Directions
+====================
+- Suggests using multiple data sources for determinations -> what I'm doing!
+- **** May be a good paper to use to find other references

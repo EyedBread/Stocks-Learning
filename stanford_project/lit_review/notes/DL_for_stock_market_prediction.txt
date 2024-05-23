@@ -1,0 +1,48 @@
+====================
+Title: Deep Learning for Stock Market Prediction
+Date: June 2020
+====================
+
+====================
+Abstract
+====================
+- Data collection of sources for 10 years of history
+- Predictions created for 1, 2, 5, 10, 15, 20, and 30 days in advance
+- Various machine learnings used:
+      + Decision Tree
+      + Bagging
+      + Random Forest
+      + Adaptive Boosting
+      + Gradient Boosting
+      + eXtreme Gradient Boosting
+      + Artificial Neural Networks
+      + Recurrent Neural Networks
+      + Long Short-Term Memory
+- Ten technical indicators were selected as inputs
+- Results shown for each technique on four metrics
+- LSTM shows more accurate results with the highest model fitting ability
+
+====================
+Introduction
+====================
+- Another study showed that a bidirectional LSTM was superior
+
+====================
+Research Data
+====================
+- Goal is to make short run predictions for emerging Iranian stock
+- Employ data from November 2009 to November 2019 of four stock market groups
+- From the opening, close, low high, and prices of the groups
+      + 10 technical indicators are calculated
+- All 10 indicators are normalized independently
+- Makes machine learning less sensitive to the scale of variables
+- Number of epochs is increased with increased days used to predict ahead with
+- For LSTM ->
+      + Number of neurons is 200 -- I believe this is days considered before
+      + Activation function is tanh
+      + Optimizer is Adam
+      + Training Days: 1, 2, 5, 10, 20, 30 -> prediction days, I think
+
+
+Data split: train/validation/test -> 70%/20%10%
+Split the data set randomly by sampling, which is interesting

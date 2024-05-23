@@ -1,0 +1,41 @@
+====================
+Title: NSE Stock Market Prediction Using Deep-Learning Models
+Date: 2018
+====================
+
+====================
+Abstract
+====================
+- Four types of DL used:
+      1. Multilayer Perceptron (MLP)
+      2. Recurrent Neural Networks (RNN)
+      3. Long Short-Term Memory (LSTM)
+      4. Convolutional Neural Network (CNN)
+- Goal is to predict the stock price of a company based on historical prices
+- Using day-wise closing price of NSE and NYSE
+- Models trained from stock price of a single company from NSE and predicted for
+  5 companies selected from NSE and NYSE
+- CNN is working best for them (everyone is getting different "bests" lol)
+- Network able to predict NYSE even though it's trained on NSE company
+- Neural network outperformed existing linear model (ARIMA)
+
+====================
+Methodology
+====================
+
+--------------------
+Dataset
+--------------------
+- Taken from highly traded stocks of three different sectors
+- Extract only day-wise closing price of each stock
+- TRAINING
+      + January 1, 1996 -> June 30 2015
+      + Closing price of 4861 days
+      + Prices normalized from 0 to 1
+      + Window of 200 years used to predict 10 days into future
+      + 1000 epochs used
+
+====================
+Results & Discussion
+====================
+- `
