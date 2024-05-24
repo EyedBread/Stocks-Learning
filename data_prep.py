@@ -342,8 +342,42 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
     # Load data into a pandas DataFrame
     raw_data = pd.read_csv(data_path)
 
+    # Calculate SMAs
+    raw_data['SMA_15'] = raw_data['Adj Close'].rolling(window=15).mean()
+    raw_data['SMA_30'] = raw_data['Adj Close'].rolling(window=30).mean()
+    raw_data['SMA_Indicator'] = np.where(raw_data['SMA_15'] > raw_data['SMA_30'], 1, 0)
+
+    # Calculate Middle, Upper, and Lower Bollinger Bands
+    period = 20
+    raw_data['MBB'] = raw_data['Adj Close'].rolling(window=period).mean()
+    std_dev = raw_data['Adj Close'].rolling(window=period).std()
+    raw_data['UBB'] = raw_data['MBB'] + (2 * std_dev)
+    raw_data['LBB'] = raw_data['MBB'] - (2 * std_dev)
+
+    # Calculate Bollinger Indicator
+    raw_data['Bollinger_Indicator'] = np.select(
+        [
+            raw_data['Adj Close'] > raw_data['UBB'],
+            (raw_data['Adj Close'] <= raw_data['UBB']) & (raw_data['Adj Close'] > raw_data['MBB']),
+            (raw_data['Adj Close'] < raw_data['MBB']) & (raw_data['Adj Close'] >= raw_data['LBB']),
+            raw_data['Adj Close'] < raw_data['LBB']
+        ],
+        [1, 2, 3, 4]
+    )
+
+    # Calculate Close diff Upper Bollinger
+    raw_data['Close_diff_UBB'] = raw_data['Adj Close'] - raw_data['UBB']
+    # Calculate Close diff Lower Bollinger
+    raw_data['Close_diff_LBB'] = raw_data['Adj Close'] - raw_data['LBB']
+
+    
+    # Drop rows with NaN values in the columns needed for analysis
+    raw_data = raw_data.dropna(subset=['SMA_15', 'SMA_30', 'MBB', 'UBB', 'LBB'])
+    print(raw_data.head())
+
     # Drop irrelevant columns based on their headers
-    columns_to_drop = ['date', 'Close']  # Add headers of columns to drop here , 'Volume','Open','High','Low'
+    # 'Volume','Open','High','Low',
+    columns_to_drop = ['date', 'Close', 'SMA_15', 'SMA_30', 'MBB', 'UBB', 'LBB',  'Close_diff_UBB', 'Close_diff_LBB', 'Bollinger_Indicator', 'SMA_Indicator']  # Add headers of columns to drop here , 'Volume','Open','High','Low'
     # columns_to_drop = ['Date'] #For the tesla dataset
     raw_data = raw_data.drop(columns=columns_to_drop)
 
@@ -390,25 +424,9 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
         # print(movements_y[0])
         # print(sequence_X[1])
         # print(movements_y[1])
-        # print(sequence_X[2])
-        # print(movements_y[2])
-        # print(sequence_X[3])
-        # print(movements_y[3])
-        # print(sequence_X[4])
-        # print(movements_y[4])
-        # print(sequence_X[5])
-        # print(movements_y[5])
-        # print(sequence_X[6])
-        # print(movements_y[6])
-        # print(sequence_X[-1])
-        # print(movements_y[-1])
     else:
         movements_y = get_movements_y(horizon, days_forward, closing_prices)
         sequence_X = get_sequence_X(raw_data, sample_size, horizon, feature_size)
-    # print("sequence_X", sequence_X.shape)
-    # print("movements_y", movements_y.shape)
-    # # round when printin
-    # print(np.round(sequence_X[0],2))
     # Split data sets into train, validate, and test.
     split_y, split_X = split_datasets(movements_y, sequence_X, end_split)
 
