@@ -375,9 +375,15 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
     raw_data = raw_data.dropna(subset=['SMA_15', 'SMA_30', 'MBB', 'UBB', 'LBB'])
     print(raw_data.head())
 
+    # assert that not all bollinger bands are the same
+    assert not raw_data['Bollinger_Indicator'].nunique() == 1
+
+    # assert that not all SMA indicators are the same
+    assert not raw_data['SMA_Indicator'].nunique() == 1
+
     # Drop irrelevant columns based on their headers
-    # 'Volume','Open','High','Low',
-    columns_to_drop = ['date', 'Close', 'SMA_15', 'SMA_30', 'MBB', 'UBB', 'LBB',  'Close_diff_UBB', 'Close_diff_LBB', 'Bollinger_Indicator', 'SMA_Indicator']  # Add headers of columns to drop here , 'Volume','Open','High','Low'
+    # 'Close_diff_UBB', 'Close_diff_LBB', 'Bollinger_Indicator', 'SMA_Indicator'
+    columns_to_drop = ['date', 'Close', 'SMA_15', 'SMA_30', 'MBB', 'UBB', 'LBB', 'Volume','Open','High','Low' ]  # Add headers of columns to drop here , 'Volume','Open','High','Low'
     # columns_to_drop = ['Date'] #For the tesla dataset
     raw_data = raw_data.drop(columns=columns_to_drop)
 
