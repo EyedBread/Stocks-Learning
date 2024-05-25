@@ -373,7 +373,6 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
     
     # Drop rows with NaN values in the columns needed for analysis
     raw_data = raw_data.dropna(subset=['SMA_15', 'SMA_30', 'MBB', 'UBB', 'LBB'])
-    print(raw_data.head())
 
     # assert that not all bollinger bands are the same
     assert not raw_data['Bollinger_Indicator'].nunique() == 1
@@ -382,13 +381,17 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
     assert not raw_data['SMA_Indicator'].nunique() == 1
 
     # Drop irrelevant columns based on their headers
-    # 'Close_diff_UBB', 'Close_diff_LBB', 'Bollinger_Indicator', 'SMA_Indicator'
-    columns_to_drop = ['date', 'Close', 'SMA_15', 'SMA_30', 'MBB', 'UBB', 'LBB', 'Volume','Open','High','Low' ]  # Add headers of columns to drop here , 'Volume','Open','High','Low'
+    # 'Close_diff_UBB', 'Close_diff_LBB', 'Bollinger_Indicator', 'SMA_Indicator' , 'Open', 'High', 'Low'
+    columns_to_drop = ['date', 'Close', 'SMA_15', 'SMA_30', 'MBB', 'UBB', 'LBB']  # Add headers of columns to drop here , 'Volume','Open','High','Low'
     # columns_to_drop = ['Date'] #For the tesla dataset
     raw_data = raw_data.drop(columns=columns_to_drop)
 
+    print(raw_data.head())
+
     relevance_scores = None
-    relevance_column = 'mean TH'  
+    relevance_column = 'TH'  
+    # cap out relevance scores at 29
+    raw_data[relevance_column] = raw_data[relevance_column].clip(upper=29)
     if use_relevance_scores:
         
         relevance_scores = raw_data[relevance_column].values
