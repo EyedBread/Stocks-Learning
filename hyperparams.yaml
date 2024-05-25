@@ -26,8 +26,8 @@ models:
     shuffle: True
 
   - model: mlp
-    hidden_size: 4
-    learning_rate: 0.001 #0.001
-    batch_size: 8
-    num_epochs: 500
+    hidden_size: 40
+    learning_rate: 0.002 #0.001
+    batch_size: 2
+    num_epochs: 2000
     shuffle: True
