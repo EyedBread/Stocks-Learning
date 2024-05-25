@@ -29,5 +29,5 @@ models:
     hidden_size: 25
     learning_rate: 0.002 #0.001
     batch_size: 2
-    num_epochs: 500
+    num_epochs: 750
     shuffle: False
