@@ -1,26 +1,8 @@
-'''
-Module Name: data_prep.py
-Author: Dylan M. Crain
-
-Description: Turns cleaned data into proper sequences, normalizes, and splits
-             it into train, validate, and test portions.
-'''
-
-
-# ====================
-# Import Libraries
-# ====================
-
 
 from os.path import join
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
-
-
-# ====================
-# Supporting Defs
-# ====================
 
 
 def load_raw_data(data_path):
@@ -427,14 +409,6 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
         movements_y = get_movements_y(min_horizon, days_forward, closing_prices)
         sequence_X = get_dynamic_sequence_X(raw_data[:, :], relevance_scores, sample_size, max_relevance_score, feature_size, movements_y)
 
-        # TODO : THIS IS FOR DEBUGGING, REMOVE LATER WHEN 100% SURE IT WORKS
-        # print("y movement", movements_y.shape)
-
-        # print(sequence_X.shape)
-        # print(sequence_X[0])
-        # print(movements_y[0])
-        # print(sequence_X[1])
-        # print(movements_y[1])
     else:
         movements_y = get_movements_y(horizon, days_forward, closing_prices)
         sequence_X = get_sequence_X(raw_data, sample_size, horizon, feature_size)
@@ -444,23 +418,12 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
     return split_y, split_X
 
 
-# ====================
-# Running from Module
-# ====================
-
-
 if __name__ == '__main__':
-    # --------------------
-    # Variable Initialize
-    # --------------------
-    # Test dataset for variable length sequences
+
     DATA_PATH = join('.', 'stanford_project', 'data', 'combined', 'amzn_all_sources_WITH_TH_2017-2020.csv')
 
     HORIZON = 10
     DAYS_FORWARD = 1
     END_SPLIT = 10
 
-    # --------------------
-    # Main functionality
-    # --------------------
     split_y, split_X = data_prep(DATA_PATH, HORIZON, DAYS_FORWARD, END_SPLIT, True)
