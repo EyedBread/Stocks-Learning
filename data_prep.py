@@ -387,6 +387,8 @@ def data_prep(data_path, horizon, days_forward, end_split, use_relevance_scores=
     raw_data = raw_data.drop(columns=columns_to_drop)
 
     print(raw_data.head())
+    print(raw_data.iloc[50:55])
+    print(raw_data.tail())
 
     relevance_scores = None
     relevance_column = 'TH'  
